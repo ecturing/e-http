@@ -4,10 +4,9 @@ import (
 	"ews/ews_error"
 )
 
-// 前缀树路由匹配，生成Get树与Post树
+// 前缀树路由匹配
 
-
-type routerHandler interface {
+type RouterHandler interface {
 	Register(pattern string, f ServerHTTP)
 	Search(pattern string) (ServerHTTP,error)
 }
