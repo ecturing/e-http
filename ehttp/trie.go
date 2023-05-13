@@ -1,15 +1,13 @@
 package ehttp
 
-import "fmt"
+import (
+	"ews/ews_error"
+)
 
 // 前缀树路由匹配，生成Get树与Post树
 
-//路由错误
-type routerError struct{
-	msg string
-}
 
-type RouterHandler interface {
+type routerHandler interface {
 	Register(pattern string, f ServerHTTP)
 	Search(pattern string) (ServerHTTP,error)
 }
@@ -19,11 +17,6 @@ type treeNode struct {
 	EndNode   bool             //终止节点
 	childNode []treeNode       //孩子节点
 	hander    ServerHTTP //函数绑定
-}
-
-
-func (err *routerError) Error() string{
-	return fmt.Sprintf("%v",err.msg)
 }
 
 // 前缀树注册
@@ -57,7 +50,7 @@ func (root *treeNode) Register(pattern string, f ServerHTTP){
 func (root *treeNode) Search(pattern string) (ServerHTTP,error ){
 	currNode:=root
 	var handler ServerHTTP=nil
-	var err *routerError=nil
+	var err *ews_error.E_error=nil
 	for _, v := range pattern {
 		found:=false
 		for i := 0; i < len(currNode.childNode); i++ {
@@ -68,14 +61,14 @@ func (root *treeNode) Search(pattern string) (ServerHTTP,error ){
 			}
 		}
 		if !found {
-			err=&routerError{
-				msg: "invalid router can't find it",
+			err=&ews_error.E_error{
+				Msg: "invalid router can't find it",
 			}
 		}
 	}
 	if !currNode.EndNode {
-		err=&routerError{
-			msg: "invalid router!",
+		err=&ews_error.E_error{
+			Msg: "invalid router!",
 		}
 	}
 	return handler,err
