@@ -1,14 +1,17 @@
 package ehttp
 
-type ServerHTTP func(r Request,rp *Response)
 
-//请求与函数组合
-func Server(pattern string,f ServerHTTP){
-	root:=&treeNode{
-		pattern: "/",
-		EndNode: false,
-		childNode: nil,
-		hander: nil,
-	}
-	root.Register(pattern,f)
+//请求与函数组合+套接字启动
+func Server(pattern string, f ServerHTTP) {
+	Root.Register(pattern, f)
 }
+
+func Confirm(s string) error{
+	err:=Init_Socket(s)
+	return err
+}
+
+
+
+
+

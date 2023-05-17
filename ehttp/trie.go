@@ -6,6 +6,15 @@ import (
 
 // 前缀树路由匹配
 
+var(
+	Root = &treeNode{
+		pattern:   "/",
+		EndNode:   false,
+		childNode: nil,
+		hander:    nil,
+	}
+)
+
 type RouterHandler interface {
 	Register(pattern string, f ServerHTTP)
 	Search(pattern string) (ServerHTTP,error)

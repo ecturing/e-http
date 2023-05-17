@@ -2,13 +2,17 @@ package main
 
 import (
 	"ews/ehttp"
+	"fmt"
 )
 
 func main() {
 	ehttp.Server("/server",server)
-	ehttp.Confirm("/:8080")
+	err:=ehttp.Confirm(":8080")
+	if err!=nil {
+		fmt.Println(err)
+	}
 }
 
-func server(rq ehttp.Request,rp *ehttp.Response){
+func server(rq *ehttp.Request,rp *ehttp.Response){
 	
 }
