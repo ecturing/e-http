@@ -2,10 +2,10 @@ package ews_error
 
 import "fmt"
 
-type E_error struct{
+type EError struct {
 	Msg string
 }
 
-func (err *E_error) Error() string{
-	return fmt.Sprintf("%v",err.Msg)
+func (err *EError) Error() string {
+	return fmt.Sprintf("%v", err.Msg)
 }

@@ -1,19 +1,22 @@
 package ehttp
+
 import (
+	"bufio"
 	"fmt"
 	"net/http"
 	"net/url"
 )
 
-//共享接口
+// 共享接口
 type ServerHTTP func(r *Request, rp *Response)
 
 var (
-	ReadChannel  = make(chan []byte, 10)
-	WriteChannel = make(chan []byte, 10)
+	TCPBuffer  = make(chan *bufio.Reader, 10)
+	connBuffer = make([]byte, 10)
 )
 
 type Response struct {
+	DataFrom []byte
 }
 
 type Request struct {
@@ -22,11 +25,11 @@ type Request struct {
 	Proto    string      //协议类型
 	Header   http.Header //请求头
 	Body     string      //请求体
-	Response Response    //响应体
+	Response *Response   //响应体
 }
 
 type ResponseHandler interface {
-	ReadResquest()
+	ReadRequest()
 	GetHeader()
 	GetBody()
 }
@@ -34,18 +37,40 @@ type ResponseHandler interface {
 type RequestHandler interface {
 }
 
-//Socket流读取
-func ReadResquest(b []byte) *Request {
-	pattern:=string(b)
-	Root.Search(pattern)
+// ReadRequest Socket流读取
+func ReadRequest(b *bufio.Reader) {
+	req, _ := http.ReadRequest(b)
+	var rep = &Response{}
+	req.Body.Read(connBuffer)
+	ereq := NewRequest(req.Method, req.URL, req.Proto, req.Header, string(connBuffer), rep)
+	search, err := Root.Search(ereq.URL.Path)
+	if err != nil {
+		fmt.Println(err)
+	}
+	search(ereq, rep)
 }
 
-func BufferRead() {
+func RouterListener() {
 	fmt.Println("infor:buffer Read")
 	for {
 		select {
-		case r := <-ReadChannel:
-			ReadResquest(r)
+		case r := <-TCPBuffer:
+			ReadRequest(r)
 		}
+	}
+}
+
+func (w *Response) ResponseWriter(any string) {
+	w.DataFrom = []byte(any)
+}
+
+func NewRequest(method string, url *url.URL, pro string, header http.Header, body string, rep *Response) *Request {
+	return &Request{
+		Method:   method,
+		URL:      url,
+		Proto:    pro,
+		Header:   header,
+		Body:     body,
+		Response: rep,
 	}
 }

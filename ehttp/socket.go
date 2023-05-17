@@ -1,27 +1,25 @@
 package ehttp
 
 import (
+	"bufio"
 	"fmt"
 	"net"
 )
 
-var (
-	connBuf = make([]byte, 1024)
-)
-
 // 定义socket绑定点，并将socket交给Linux epoll管理，增强并发率
 
-func Init_Socket(address string) error {
+func InitSocket(address string) error {
 	fmt.Println("socket init")
-	tcpadd, err := net.ResolveTCPAddr("tcp", address)
+	tcpAddr, err := net.ResolveTCPAddr("tcp", address)
 	if err != nil {
 		return err
 	}
-	listener, err := net.ListenTCP("tcp", tcpadd)
+	listener, err := net.ListenTCP("tcp", tcpAddr)
 	if err != nil {
 		return err
 	}
 	defer listener.Close()
+	go RouterListener() //Socket启动成功，启动路由系统
 	listenerHandler(listener)
 	return nil
 }
@@ -41,16 +39,7 @@ func listenerHandler(listener *net.TCPListener) {
 
 func readBuf(c *net.TCPConn) {
 	for {
-		n,err:=c.Read(connBuf)
-		if n>0 {
-			ReadChannel <- connBuf
-		}else{
-			fmt.Println("error:",err)
-		}
+		reader := bufio.NewReader(c)
+		TCPBuffer <- reader
 	}
-}
-
-func writeBuf(c *net.TCPConn)  {
-	c.Write(connBuf)
-	defer c.Close()
 }
