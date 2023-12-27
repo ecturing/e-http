@@ -4,6 +4,15 @@ import (
 	"errors"
 )
 
+type RequestMethod int
+
+const (
+	GET RequestMethod =iota
+	POST
+	PUT
+	DELETE
+)
+
 //初始化
 var (
 	//路由树根节点
@@ -31,12 +40,6 @@ type methodNode struct {
 }
 
 // ----------------------------------路由方法节点----------------------------------
-type RequestMethod string
-
-const (
-	GET  RequestMethod = "GET"
-	POST RequestMethod = "POST"
-)
 
 //路由处理函数
 type RouterHandler interface {
