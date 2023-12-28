@@ -7,139 +7,86 @@ import (
 type RequestMethod int
 
 const (
-	GET RequestMethod =iota
+	GET RequestMethod = iota
 	POST
 	PUT
 	DELETE
 )
 
-//初始化
-var (
-	//路由树根节点
-	Root = &RootNode{
-		methodNodes: make([]methodNode, 0),
-	}
-	//路由树终止节点
-	ENDNODE = &treeNode{
-		pattern:   "",
-		EndNode:   false,
-		childNode: make([]treeNode, 0),
-		hander:    nil,
-	}
-)
-
-//路由树根节点结构体
-type RootNode struct {
-	methodNodes []methodNode
+type Router struct {
+	root *treeNode
 }
 
-//路由树方法节点结构体
-type methodNode struct {
-	method RequestMethod //请求方法
-	node   *treeNode     //路由树节点
+// 初始化路由器
+func NewRouter() *Router {
+	return &Router{&treeNode{}}
 }
 
 // ----------------------------------路由方法节点----------------------------------
 
-//路由处理函数
+// 路由处理函数
 type RouterHandler interface {
 	Register(pattern string, f ServerHTTP)
 	Search(pattern string) (ServerHTTP, error)
 }
 
-//路由树节点
+// 路由树节点
 type treeNode struct {
-	pattern   string     //节点值
-	EndNode   bool       //终止节点
-	childNode []treeNode //孩子节点
-	hander    ServerHTTP //函数绑定
+	pattern   rune               //节点值
+	EndNode   bool               //终止节点
+	childNode map[rune]*treeNode //孩子节点
+	hander    ServerHTTP         //函数绑定
+	method    RequestMethod      //请求方法
 }
 
-// 初始化路由树
-func InitTree() {
-	Root.methodNodes = append(Root.methodNodes, methodNode{
-		method: GET,
-		node:   nil,
-	})
-	Root.methodNodes = append(Root.methodNodes, methodNode{
-		method: POST,
-		node:   nil,
-	})
+// 路由器注册函数
+func (r *Router) Register(pattern string, f ServerHTTP) {
+	if r.root == nil {
+		panic("root node is nil")
+	} else if pattern == "" {
+		panic("pattern is empty")
+	} else if f == nil {
+		panic("hander is nil")
+	} else {
+		//遍历pattern，使用pattern的每个字符来使用前缀树构建路由树
+		current := r.root
+		for _, v := range pattern {
+			if _, ok := current.childNode[v]; !ok {
+				current.childNode[v] = &treeNode{
+					pattern:   v,
+					EndNode:   false,
+					childNode: make(map[rune]*treeNode),
+					hander:    nil,
+					method:    GET,
+				}
+			}
+			current = current.childNode[v]
+		}
+		current.EndNode = true
+		current.hander = f
+	}
 }
 
-// 前缀树注册
-func (root *RootNode) Register(pattern string, f ServerHTTP, method RequestMethod) {
-	var currNode *treeNode
-	switch method {
-	case GET:
-		if root.methodNodes[0].node == nil {
-			root.methodNodes[0].node = ENDNODE
-		}
-		currNode = root.methodNodes[0].node
-
-	case POST:
-		if root.methodNodes[1].node == nil {
-			root.methodNodes[1].node = ENDNODE
-		}
-		currNode = root.methodNodes[1].node
-
-	default:
-		// handle other methods
-		return
-	}
-	for _, v := range pattern {
-		found := false
-		for i := 0; i < len(currNode.childNode); i++ {
-			if currNode.childNode[i].pattern == string(v) {
-				currNode = &currNode.childNode[i]
-				found = true
-				break
+// 路由搜索函数
+func (r *Router) Search(pattern string) (ServerHTTP, error) {
+	if r.root == nil {
+		panic("root node is nil")
+	} else if pattern == "" {
+		panic("pattern is empty")
+	} else {
+		current := r.root
+		//前缀树搜索，从根节点开始，使用pattern的字符与节点进行比较，直到找到EndNode，返回hander，否则返回错误
+		for _, v := range pattern {
+			if current.pattern == v {
+				current = current.childNode[v]
+			} else {
+				if current.EndNode {
+					return current.hander, nil
+				} else {
+					return nil, errors.New("no such route")
+				}
 			}
 		}
-		if !found {
-			newNode := treeNode{
-				pattern:   string(v),
-				EndNode:   false,
-				childNode: make([]treeNode, 0),
-				hander:    nil,
-			}
-			currNode.childNode = append(currNode.childNode, newNode)
-			currNode = &currNode.childNode[len(currNode.childNode)-1]
-		}
 	}
-	currNode.EndNode = true
-	currNode.hander = f
-}
-
-// 路由树查找
-func (root *RootNode) Search(pattern string, method RequestMethod) (ServerHTTP, error) {
-	var currNode *treeNode
-	var handler ServerHTTP = nil
-	var err error = nil
-
-	switch method {
-	case GET:
-		currNode = root.methodNodes[0].node
-	case POST:
-		currNode = root.methodNodes[1].node
-	default:
-		// handle other methods
-	}
-	for _, v := range pattern {
-		found := false
-		for i := 0; i < len(currNode.childNode); i++ {
-			if currNode.childNode[i].pattern == string(v) {
-				currNode = &currNode.childNode[i]
-				found = true
-				handler = currNode.hander
-			}
-		}
-		if !found {
-			err = errors.New("404,routerERR:invalid router can't find it")
-		}
-	}
-	if !currNode.EndNode {
-		err = errors.New("404,routerERR:invalid router")
-	}
-	return handler, err
+	return nil, errors.New("no such route")
 }
