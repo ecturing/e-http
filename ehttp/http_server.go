@@ -3,15 +3,14 @@ package ehttp
 import "fmt"
 
 // 请求与函数组合+套接字启动
-func Server(pattern string, f ServerHTTP) {
-	Root.Register(pattern, f)
+func Server(r *Router, pattern string, f ServerHTTP,m RequestMethod) {
+	r.Register(pattern, f,m)
+	go r.RouterListener() //启动路由系统
 }
 
 func Confirm(s string) {
-	go func() {
-		err := InitSocket(s)
-		if err != nil {
-			fmt.Println("error:%v", err)
-		}
-	}()
+	err := InitSocket(s)
+	if err != nil {
+		fmt.Println("socket初始化失败", err)
+	}
 }
