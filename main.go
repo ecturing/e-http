@@ -5,10 +5,11 @@ import (
 )
 
 func main() {
-	ehttp.Server("/server", server)
+	r := ehttp.NewRouter()
+	ehttp.Server(r,"/server", server,ehttp.GET)
 	ehttp.Confirm(":8080")
 }
 
 func server(rq *ehttp.Request, rp *ehttp.Response) {
-
+	rp.DataFrom = "reponse"
 }
