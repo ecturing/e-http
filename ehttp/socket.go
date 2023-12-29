@@ -2,6 +2,7 @@ package ehttp
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"net"
 )
@@ -9,7 +10,7 @@ import (
 type Event struct {
 	Conn   *net.TCPConn
 	Reader *bufio.Reader
-	Writer []byte
+	Writer *bytes.Buffer
 }
 
 // 定义socket绑定点，并将socket交给Linux epoll管理，增强并发率
@@ -24,7 +25,7 @@ func InitSocket(address string) error {
 		return err
 	}
 	defer listener.Close()
-	go RouterListener() //Socket启动成功，启动路由系统
+	
 	listenerHandler(listener)
 	return nil
 }
@@ -37,7 +38,7 @@ func listenerHandler(listener *net.TCPListener) {
 			fmt.Printf("Error accepting connection: %s\n", err.Error())
 			continue
 		}
-		fmt.Println("one TCP join the server")
+		fmt.Printf("%s TCP join the server\n",conn.RemoteAddr().String())
 		go connectionReadBuf(conn)
 		go connectWriteBuf(conn)
 	}
@@ -45,7 +46,6 @@ func listenerHandler(listener *net.TCPListener) {
 
 // 读取链接缓冲区准备读取的事件并发送到管道
 func connectionReadBuf(c *net.TCPConn) {
-	for {
 		readevent := bufio.NewReader(c)
 		var event = &Event{
 			Conn: c, 
@@ -53,15 +53,15 @@ func connectionReadBuf(c *net.TCPConn) {
 			Writer: nil,
 		}
 		ReadQueen <- event
-	}
 }
 
 // 写入链接的缓冲区
 func connectWriteBuf(c *net.TCPConn) {
 	for s := range WriteQueen {
 		w := bufio.NewWriter(c)
-		w.Write(s.Writer)
+		w.Write(s.Writer.Bytes())
 		w.Flush()
 		c.Close()
+		fmt.Printf("%s TCP leave the server\n",c.RemoteAddr().String())
 	}
 }
