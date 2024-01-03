@@ -2,24 +2,28 @@ package ehttp
 
 import (
 	"errors"
-	"fmt"
+
+	"github.com/rs/zerolog/log"
 )
 
+// 请求方法重定义
 type RequestMethod int
 
+// 方法枚举
 const (
-	NULL RequestMethod = iota
+	NULL RequestMethod = iota //默认空
 	GET
 	POST
 	PUT
 	DELETE
 )
 
+// 路由
 type Router struct {
 	root *treeNode
 }
 
-// 初始化路由器
+// 初始化路由器,根节点为引导节点，不做存储
 func NewRouter() *Router {
 	return &Router{&treeNode{
 		pattern:   ' ',
@@ -31,10 +35,9 @@ func NewRouter() *Router {
 }
 
 // ----------------------------------路由方法节点----------------------------------
-
 // 路由处理函数
 type RouterHandler interface {
-	Register(pattern string, f ServerHTTP)
+	Register(pattern string, f ServerHTTP,method RequestMethod)
 	Search(pattern string) (ServerHTTP, error)
 	RouterListen()
 }
@@ -50,6 +53,12 @@ type treeNode struct {
 
 // 路由器注册函数
 func (r *Router) Register(pattern string, f ServerHTTP, method RequestMethod) {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Error().Err(err.(error)).Msg("Register error")
+		}
+	}()
+	
 	if r.root == nil {
 		panic("root node is nil")
 	} else if pattern == "" {
@@ -79,13 +88,20 @@ func (r *Router) Register(pattern string, f ServerHTTP, method RequestMethod) {
 
 // 路由搜索函数
 func (r *Router) Search(pattern string) (ServerHTTP, error) {
+
+	defer func() {
+		if err := recover(); err != nil {
+			log.Error().Err(err.(error)).Msg("Search error")
+		}
+	}()
+
 	if r.root == nil {
 		panic("root node is nil")
 	} else if pattern == "" {
 		panic("pattern is empty")
 	} else {
 		//从根节点的子节点开始和pattern进行匹配，因为根节点整个路由树的引导点
-		if current, yes := r.root.childNode[[]rune (pattern)[0]]; yes {
+		if current, yes := r.root.childNode[[]rune(pattern)[0]]; yes {
 			cur := current
 			for i := 1; i < len(pattern); i++ {
 				v := []rune(pattern)[i]
@@ -102,12 +118,13 @@ func (r *Router) Search(pattern string) (ServerHTTP, error) {
 		}
 
 	}
+	log.Error().Err(errors.New("no such route")).Msg("no such route")
 	return nil, errors.New("no such route")
 }
-
-func (router *Router) RouterListener() {
-	fmt.Println("infor:buffer Read In")
+// 路由监听函数
+func (r *Router) RouterListen() {
+	log.Info().Msg("Starting Router Listening...")
 	for read := range ReadQueen {
-		ReadRequest(router, read.Reader)
+		ReadRequest(r, read.Reader)
 	}
 }
