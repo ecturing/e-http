@@ -58,7 +58,7 @@ func (r *Router) Register(pattern string, f ServerHTTP, method RequestMethod) {
 			log.Error().Err(err.(error)).Msg("Register error")
 		}
 	}()
-	
+
 	if r.root == nil {
 		panic("root node is nil")
 	} else if pattern == "" {
@@ -87,7 +87,7 @@ func (r *Router) Register(pattern string, f ServerHTTP, method RequestMethod) {
 }
 
 // 路由搜索函数
-func (r *Router) Search(pattern string) (ServerHTTP, error) {
+func (r *Router) Search(pattern string, method RequestMethod) (ServerHTTP, error) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -110,10 +110,13 @@ func (r *Router) Search(pattern string) (ServerHTTP, error) {
 				}
 				cur = cur.childNode[v]
 			}
-			if cur.EndNode {
+			if cur.EndNode && cur.method == method {
 				return cur.hander, nil
-			} else {
+			} else if cur.EndNode {
 				return nil, errors.New("no such route")
+				
+			}else{
+				return nil, errors.New("method not allowed")
 			}
 		}
 
