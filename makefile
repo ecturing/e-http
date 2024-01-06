@@ -3,7 +3,7 @@ TESTCLIENT_BIN:=client
 
 build:
 	go build -o out/$(SERVER_BIN)
-	go build -o out/$(TESTCLIENT_BIN) test/test.go
+	go build -o out/$(TESTCLIENT_BIN) ./test/Client.go
 
 srun:
 	./out/$(SERVER_BIN)
@@ -12,7 +12,7 @@ trun:
 
 clean: 
 	rm -f ./out/$(SERVER_BIN) 
-	rm -f./out/$(TESTCLIENT_BIN)
+	rm -f ./out/$(TESTCLIENT_BIN)
 
 test:
 	build
