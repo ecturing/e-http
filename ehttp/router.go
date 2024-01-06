@@ -1,7 +1,7 @@
 package ehttp
 
 import (
-	"errors"
+	"ews/Eerror"
 
 	"github.com/rs/zerolog/log"
 )
@@ -106,23 +106,23 @@ func (r *Router) Search(pattern string, method RequestMethod) (ServerHTTP, error
 			for i := 1; i < len(pattern); i++ {
 				v := []rune(pattern)[i]
 				if _, ok := cur.childNode[v]; !ok {
-					return nil, errors.New("no such route")
+					return nil, Eerror.NotFound
 				}
 				cur = cur.childNode[v]
 			}
 			if cur.EndNode && cur.method == method {
 				return cur.hander, nil
 			} else if cur.EndNode {
-				return nil, errors.New("no such route")
+				return nil, Eerror.NotFound
 				
 			}else{
-				return nil, errors.New("method not allowed")
+				return nil, Eerror.MethodNotAllow
 			}
 		}
 
 	}
-	log.Error().Err(errors.New("no such route")).Msg("no such route")
-	return nil, errors.New("no such route")
+	log.Error().Err(Eerror.NotFound).Msg("Search error")
+	return nil, Eerror.NotFound
 }
 // 路由监听函数
 func (r *Router) RouterListen() {
