@@ -9,7 +9,7 @@ import (
 )
 
 type Event struct {
-	Conn   *net.TCPConn
+	// Conn   *net.TCPConn
 	Reader *bufio.Reader
 	Writer *bytes.Buffer
 }
@@ -49,7 +49,7 @@ func listenerHandler(listener *net.TCPListener) {
 func connectionReadBuf(c *net.TCPConn) {
 	readevent := bufio.NewReader(c)
 	var event = &Event{
-		Conn:   c,
+		// Conn:   c,
 		Reader: readevent,
 		Writer: nil,
 	}
@@ -58,12 +58,20 @@ func connectionReadBuf(c *net.TCPConn) {
 
 // 写入链接的缓冲区
 func connectWriteBuf(c *net.TCPConn) {
-	for s := range WriteQueen {
+	select {
+	case s := <-WriteQueen:
+		// do
 		w := bufio.NewWriter(c)
 		w.Write(s.Writer.Bytes())
 		w.Flush()
 		c.Close()
-		log.Info().Msgf("%s TCP enter the server", c.RemoteAddr().String())
-
+		log.Info().Msgf("%s TCP leave the server", c.RemoteAddr().String())
+	case s := <-ErrorSingal:
+		// do
+		w := bufio.NewWriter(c)
+		w.Write(s.Writer.Bytes())
+		w.Flush()
+		c.Close()
+		log.Info().Msgf("%s TCP leave the server", c.RemoteAddr().String())
 	}
 }
