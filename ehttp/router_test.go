@@ -5,23 +5,6 @@ import (
 	"testing"
 )
 
-func TestNewRouter(t *testing.T) {
-	tests := []struct {
-		name string
-		want *Router
-	}{
-		// TODO: Add test cases.
-
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := NewRouter(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewRouter() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestRouter_Register(t *testing.T) {
 	type fields struct {
 		root *treeNode
@@ -36,10 +19,9 @@ func TestRouter_Register(t *testing.T) {
 		fields fields
 		args   args
 	}{
-		// 生成3个测试用例，pattern分别为/api/v1依次v2v3，method为GET，f为ServerHTTP类型函数但函数体为空
-		{"test1", fields{root: NewRouter().root}, args{"/api/v1", func(r *Request, rp *Response) {}, GET}},
-		{"test2", fields{root: NewRouter().root}, args{"/api/v2", func(r *Request, rp *Response) {}, GET}},
-		{"test3", fields{root: NewRouter().root}, args{"/api/v3", func(r *Request, rp *Response) {}, GET}},
+		{"test1", fields{root: NewRouter().root}, args{"/api/v1", func(r *E_Request, rp *E_Response) {}, GET}},
+		{"test2", fields{root: NewRouter().root}, args{"/api/v2", func(r *E_Request, rp *E_Response) {}, GET}},
+		{"test3", fields{root: NewRouter().root}, args{"/api/v3", func(r *E_Request, rp *E_Response) {}, POST}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -53,14 +35,15 @@ func TestRouter_Register(t *testing.T) {
 
 func TestRouter_Search(t *testing.T) {
 	r:=NewRouter()
-	r.Register("/api/v1", func(r *Request, rp *Response) {}, GET)
-	r.Register("/api/v2", func(r *Request, rp *Response) {}, GET)
-	r.Register("/api/v3", func(r *Request, rp *Response) {}, GET)
+	r.Register("/api/v1", func(r *E_Request, rp *E_Response) {}, GET)
+	r.Register("/api/v2", func(r *E_Request, rp *E_Response) {}, GET)
+	r.Register("/api/v3", func(r *E_Request, rp *E_Response) {}, GET)
 	type fields struct {
 		root *treeNode
 	}
 	type args struct {
 		pattern string
+		method  RequestMethod
 	}
 	tests := []struct {
 		name    string
@@ -70,16 +53,16 @@ func TestRouter_Search(t *testing.T) {
 		wantErr bool
 	}{
 		// TODO: Add test cases.
-		{"test1", fields{root: r.root}, args{"/api/v1"}, func(r *Request, rp *Response) {}, false},
-		{"test2", fields{root: r.root}, args{"/api/v5"}, nil , true},
-		{"test3", fields{root: r.root}, args{"/api/v3"}, func(r *Request, rp *Response) {}, false},
+		{"test1", fields{root: r.root}, args{"/api/v1",GET}, func(r *E_Request, rp *E_Response) {}, false},
+		{"test2", fields{root: r.root}, args{"/api/v5",GET}, nil , true},
+		{"test3", fields{root: r.root}, args{"/api/v3",POST}, nil, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &Router{
 				root: tt.fields.root,
 			}
-			got, err := r.Search(tt.args.pattern)
+			got, err := r.Search(tt.args.pattern, tt.args.method)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Router.Search() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -91,7 +74,7 @@ func TestRouter_Search(t *testing.T) {
 	}
 }
 
-func TestRouter_RouterListener(t *testing.T) {
+func TestRouter_RouterListen(t *testing.T) {
 	type fields struct {
 		root *treeNode
 	}
@@ -103,10 +86,10 @@ func TestRouter_RouterListener(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			router := &Router{
+			r := &Router{
 				root: tt.fields.root,
 			}
-			router.RouterListener()
+			r.RouterListen()
 		})
 	}
 }
