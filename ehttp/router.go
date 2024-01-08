@@ -37,7 +37,7 @@ func NewRouter() *Router {
 // ----------------------------------路由方法节点----------------------------------
 // 路由处理函数
 type RouterHandler interface {
-	Register(pattern string, f ServerHTTP,method RequestMethod)
+	Register(pattern string, f ServerHTTP, method RequestMethod)
 	Search(pattern string) (ServerHTTP, error)
 	RouterListen()
 }
@@ -112,10 +112,10 @@ func (r *Router) Search(pattern string, method RequestMethod) (ServerHTTP, error
 			}
 			if cur.EndNode && cur.method == method {
 				return cur.hander, nil
-			} else if cur.EndNode {
+			} else if !cur.EndNode {
 				return nil, Eerror.NotFound
-				
-			}else{
+
+			} else {
 				return nil, Eerror.MethodNotAllow
 			}
 		}
@@ -124,6 +124,7 @@ func (r *Router) Search(pattern string, method RequestMethod) (ServerHTTP, error
 	log.Error().Err(Eerror.NotFound).Msg("Search error")
 	return nil, Eerror.NotFound
 }
+
 // 路由监听函数
 func (r *Router) RouterListen() {
 	log.Info().Msg("Starting Router Listening...")
