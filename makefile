@@ -2,13 +2,13 @@ SERVER_BIN:=serevr
 TESTCLIENT_BIN:=client
 
 build:
-	go build -o out/$(SERVER_BIN)
-	go build -o out/$(TESTCLIENT_BIN) ./test/Client.go
+	go build -o out/exec/$(SERVER_BIN)
+	go build -o out/exec/$(TESTCLIENT_BIN) ./test/Client.go
 
 srun:
-	./out/$(SERVER_BIN)
+	./out/exec/$(SERVER_BIN)
 trun:
-	./out/$(TESTCLIENT_BIN)
+	./out/exec/$(TESTCLIENT_BIN)
 
 clean: 
 	rm -f ./out/$(SERVER_BIN) 
