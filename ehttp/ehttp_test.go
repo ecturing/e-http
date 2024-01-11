@@ -2,6 +2,7 @@ package ehttp
 
 import (
 	"bufio"
+	"bytes"
 	"io"
 	"reflect"
 	"strings"
@@ -71,44 +72,6 @@ func Test_getPathValues(t *testing.T) {
 			}
 			if gotValues != tt.wantValues {
 				t.Errorf("getPathValues() gotValues = %v, want %v", gotValues, tt.wantValues)
-			}
-		})
-	}
-}
-
-func TestReadBody(t *testing.T) {
-	type args struct {
-		request *bufio.Reader
-	}
-	tests := []struct {
-		name  string
-		args  args
-		wantB *bufio.Reader
-	}{
-		// 生成三个测试用例，request为bufio.Reader类型，里面内容为标准request字节流(符合标准就行，随机生成)，分别测试正常请求和不规范请求
-		{"test1", args{bufio.NewReader(strings.NewReader("GET / HTTP/1.1\r\n" +
-			"Host: www.example.com\r\n" +
-			"User-Agent: Go-http-client/1.1\r\n" +
-			"Accept: */*\r\n" +
-			"Accept-Encoding: gzip\r\n\r\n"))}, bufio.NewReader(strings.NewReader(""))},
-		{"test2", args{bufio.NewReader(strings.NewReader("POST / HTTP/1.1\r\n" +
-			"Host: www.example.com\r\n" +
-			"User-Agent: Go-http-client/1.1\r\n" +
-			"Content-Type: application/json\r\n" +
-			"Content-Length: 18\r\n\r\n" +
-			"{\"key\":\"value\"}"))}, bufio.NewReader(strings.NewReader("{\"key\":\"value\"}"))},
-		{"test3", args{bufio.NewReader(strings.NewReader("POST / HTTP/1.1\r\n" +
-			"Host: www.example.com\r\n" +
-			"User-Agent: Go-http-client/1.1\r\n" +
-			"Content-Type: application/x-www-form-urlencoded\r\n" +
-			"Content-Length: 13\r\n\r\n" +
-			"key1=value1"))}, bufio.NewReader(strings.NewReader("key1=value1"))},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// 获取reader里面真正存储的内容，进行比较
-			if gotB := ReadBody(tt.args.request); !reflect.DeepEqual(readBuffer(gotB), readBuffer(tt.wantB)) {
-				t.Errorf("ReadBody() = %v, want %v", gotB, tt.wantB)
 			}
 		})
 	}
@@ -254,6 +217,46 @@ func TestReadHeader(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := ReadHeader(tt.args.b); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ReadHeader() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestReadBody(t *testing.T) {
+	type args struct {
+		reader *bufio.Reader
+		length int
+	}
+	tests := []struct {
+		name string
+		args args
+		want io.ReadCloser
+	}{
+		// TODO: Add test cases.
+		{"test1", args{bufio.NewReader(strings.NewReader("GET / HTTP/1.1\r\n" +
+			"Host: www.example.com\r\n" +
+			"User-Agent: Go-http-client/1.1\r\n" +
+			"Accept: */*\r\n" +
+			"Accept-Encoding: gzip\r\n\r\n")), 0}, io.NopCloser(strings.NewReader(""))},
+		{"test2", args{bufio.NewReader(strings.NewReader("POST / HTTP/1.1\r\n" +
+			"Host: www.example.com\r\n" +
+			"User-Agent: Go-http-client/1.1\r\n" +
+			"Content-Type: application/json\r\n" +
+			"Content-Length: 18\r\n\r\n" +
+			"{\"key\":\"value\"}")), bytes.NewBufferString("{\"key\":\"value\"}").Len()}, io.NopCloser(strings.NewReader("{\"key\":\"value\"}"))},
+		{"test3", args{bufio.NewReader(strings.NewReader("POST / HTTP/1.1\r\n" +
+			"Host: www.example.com\r\n" +
+			"User-Agent: Go-http-client/1.1\r\n" +
+			"Content-Type: application/x-www-form-urlencoded\r\n" +
+			"Content-Length: 13\r\n\r\n" +
+			"key1=value1")), bytes.NewBufferString("key1=value1").Len()}, io.NopCloser(strings.NewReader("key1=value1"))},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, _ := io.ReadAll(ReadBody(tt.args.reader, tt.args.length))
+			want, _ := io.ReadAll(tt.want)
+			if !reflect.DeepEqual(got, want) {
+				t.Errorf("ReadBody() = %v, want %v", got, want)
 			}
 		})
 	}

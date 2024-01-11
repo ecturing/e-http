@@ -2,8 +2,7 @@ package ehttp
 
 import (
 	"ews/Eerror"
-
-	"github.com/rs/zerolog/log"
+	"ews/logutil"
 )
 
 var (
@@ -14,10 +13,10 @@ var (
 func errHandler(e error) int {
 	switch err := e.(type) {
 	case Eerror.NetError:
-		log.Error().Err(err).Msg(err.Msg)
+		logutil.Logger.Error().Err(err).Msg(err.Msg)
 		return err.Code
 	case Eerror.ServerError:
-		log.Error().Err(err).Msg(err.Msg)
+		logutil.Logger.Error().Err(err).Msg(err.Msg)
 		return err.Code
 	case nil:
 		return Eerror.OK.Code
