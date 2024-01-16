@@ -17,6 +17,7 @@ var (
 type logConfig struct {
 	Level  zerolog.Level `yaml:"level"`
 	Target string        `yaml:"target"`
+	TimeFormat string    `yaml:"timeFormat"`
 }
 
 func init() {
@@ -30,6 +31,6 @@ func init() {
 		panic(err) // 如果无法打开或创建文件，则程序终止
 	}
 	Logger = zerolog.New(logFile).With().Timestamp().Logger()
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
+	zerolog.TimeFieldFormat = log.TimeFormat
 	zerolog.SetGlobalLevel(log.Level) // 可以根据需要设置默认的日志级别
 }
