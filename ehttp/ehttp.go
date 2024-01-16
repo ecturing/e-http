@@ -38,6 +38,8 @@ type E_Response struct {
 type ResponseHandler interface {
 	//响应体序列化
 	ResponseSerializer() *bytes.Buffer
+	// 默认响应头
+	DefaultHeader()
 }
 
 // 响应体序列化
@@ -47,13 +49,20 @@ func (w *E_Response) ResponseSerializer() *bytes.Buffer {
 	for k, v := range w.Headers {
 		header.WriteString(k + ": " + v + NEWLINE)
 	}
+
+	// 拼接响应体,header已经加上一个换行符了，所以这里只需要加一个换行符
 	b.WriteString(w.protocal + SPACE + strconv.Itoa(w.Status) + SPACE + w.OK +
 		NEWLINE +
 		header.String() +
-		NEWLINE + NEWLINE +
+		NEWLINE +
 		w.DataFrom)
 	buf := bytes.NewBuffer([]byte(b.String()))
 	return buf
+}
+
+func (w *E_Response) DefaultHeader() {
+	w.Headers["Content-Type"] = "text/plain"
+	w.Headers["Server"] = "EWS"
 }
 
 // 请求体
@@ -247,6 +256,7 @@ func ReadRequest(router *Router, readevent *bufio.Reader) {
 			return
 		}
 		logutil.Logger.Info().Msg("进入处理环节")
+		rep.DefaultHeader()
 		hander(req, rep)
 	case POST:
 		// do
@@ -255,7 +265,7 @@ func ReadRequest(router *Router, readevent *bufio.Reader) {
 			ErrSingal(err)
 			return
 		}
-		errHandler(err)
+		rep.DefaultHeader()
 		hander(req, rep)
 	case PUT:
 		// do

@@ -34,6 +34,7 @@ func ErrSingal(err error) {
 		Headers:  make(map[string]string),
 		DataFrom: err.Error(),
 	}
+	er.DefaultHeader()
 	er.ResponseSerializer()
 	e := &Event{
 		Reader: nil,
