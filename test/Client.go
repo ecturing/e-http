@@ -5,37 +5,84 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	// "strconv"
 )
 
-// 写一个能向localhost:8080端口发送get,post请求的函数并编写测试用例，生成get请求，post请求各三个，请求参数分别为张三李四王五
-func sendPostRequest() {
-	resp, err := http.Post("http://localhost:8080/server", "application/json", nil)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-	defer resp.Body.Close()
-	fmt.Println("Status:", resp.Status)
-	fmt.Println("Headers:", resp.Header)
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-	fmt.Println("Body:", string(bodyBytes))
+const (
+	GET  = "GET"
+	POST = "POST"
+	ERR  = "GTE"
+	PUT  = "PUT"
+)
+
+func main() {
+	test()
 }
 
-func sendGetRequest() {
-	//请求体必须以双\r\n结尾
-	buff := bytes.NewBufferString("张三")
+func test() {
+	type args struct {
+		method string
+		addr   string
+		body   string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+		err  bool
+	}{
+		//生成测试用例，want参数为服务器返回参数，返回内容是客户端发送的body内容，利用参数实现最大覆盖测试,正确路由路径为server
+		{
+			name: "Test1",
+			args: args{
+				method: GET,
+				addr:   "http://localhost:8080/server/v1/user",
+				body:   "h",
+			},
+			want: "Hello World",
+			err:  true,
+		},
+		{
+			name: "Test2",
+			args: args{
+				method: POST,
+				addr:   "http://localhost:8080/api/v1/user",
+				body:   "id=1&name=2",
+			},
+			want: "id=1&name=2",
+			err:  true,
+		},
+		{
+			name: "Test3",
+			args: args{
+				method: POST,
+				addr:   "http://localhost:8080/server",
+				body:   "id=1&name=2",
+			},
+			want: "id=1&name=2",
+			err:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		if a := serverTest(tt.args.method, tt.args.addr, tt.args.body); a == tt.want {
+			fmt.Printf("%s测试成功", tt.name)
+		} else if tt.err {
+			fmt.Printf("%s测试成功", tt.name)
+		} else {
+			fmt.Printf("%s测试失败", tt.name)
+		}
+	}
+}
+
+func serverTest(method string, addr string, body string) string {
+	buff := bytes.NewBufferString(body)
 	length := buff.Len()
-	req, err := http.NewRequest("POST", "http://localhost:8080/server", buff)
+	req, err := http.NewRequest(method, addr, buff)
 	if err != nil {
 		fmt.Println("Error:", err)
-		return
+		return ""
 	}
-	// 指定 HTTP 版本，例如 HTTP/2
+	// 指定 HTTP 版本
 	req.Proto = "HTTP/1.0"
 	req.ProtoMajor = 1
 	req.ProtoMinor = 0
@@ -44,24 +91,14 @@ func sendGetRequest() {
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println("Error:", err)
-		return
+		return ""
 	}
 	defer resp.Body.Close()
-
-	fmt.Println("Status:", resp.Status)
-	fmt.Println("Headers:", resp.Header)
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("Error:", err)
-		return
+		return ""
 	}
-
-	fmt.Println("Body:", string(bodyBytes))
-}
-
-// 生成mian函数并调用上面的函数
-func main() {
-	sendGetRequest()
-	// sendPostRequest()
+	return string(bodyBytes)
 }
