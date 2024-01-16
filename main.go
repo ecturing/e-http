@@ -12,7 +12,6 @@ func main() {
 }
 
 func server(rq *ehttp.E_Request, rp *ehttp.E_Response) {
-	rp.Headers["Content-Type"] = "text/plain"
 	data, err := io.ReadAll(rq.Body)
 	if err != nil {
 		panic(err)
