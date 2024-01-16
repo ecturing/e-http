@@ -2,18 +2,18 @@ SERVER_BIN:=serevr
 TESTCLIENT_BIN:=client
 
 build:
-	go build -o out/exec/$(SERVER_BIN)
-	go build -o out/exec/$(TESTCLIENT_BIN) ./test/Client.go
+	go build -o out/target/$(SERVER_BIN)
+	go build -o out/target/$(TESTCLIENT_BIN) ./test/Client.go
 
 srun:
-	./out/exec/$(SERVER_BIN)
+	./out/target/$(SERVER_BIN)
 trun:
-	./out/exec/$(TESTCLIENT_BIN)
+	./out/target/$(TESTCLIENT_BIN)
 
 clean: 
-	rm -f ./out/$(SERVER_BIN) 
-	rm -f ./out/$(TESTCLIENT_BIN)
-
+	rm -f ./out/target/$(SERVER_BIN) 
+	rm -f ./out/target/$(TESTCLIENT_BIN)
+	rm -f ./out/log/*.log
 test:
 	build
 	srun
