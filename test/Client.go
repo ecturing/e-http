@@ -65,11 +65,11 @@ func test() {
 
 	for _, tt := range tests {
 		if a := serverTest(tt.args.method, tt.args.addr, tt.args.body); a == tt.want {
-			fmt.Printf("%s测试成功", tt.name)
+			fmt.Printf("%s测试成功\n", tt.name)
 		} else if tt.err {
-			fmt.Printf("%s测试成功", tt.name)
+			fmt.Printf("%s测试成功\n", tt.name)
 		} else {
-			fmt.Printf("%s测试失败", tt.name)
+			fmt.Printf("%s测试失败\n", tt.name)
 		}
 	}
 }
