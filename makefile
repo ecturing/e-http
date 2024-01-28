@@ -8,7 +8,7 @@ build:
 
 srun:
 	@./out/target/$(SERVER_BIN) &
-	@sleep 2
+	@sleep 10
 
 trun:
 	@./out/target/$(TESTCLIENT_BIN) > $(TestOutPut)
