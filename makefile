@@ -10,7 +10,7 @@ srun:
 	@./out/target/$(SERVER_BIN) &
 	@sleep 10
 
-trun:
+trun: srun
 	@./out/target/$(TESTCLIENT_BIN) > $(TestOutPut)
 
 clean: 
@@ -35,4 +35,4 @@ testCheck: trun
 shutdown:
 	@pkill -f $(SERVER_BIN)
 
-Stest: build srun testCheck shutdown
+Stest: build testCheck shutdown

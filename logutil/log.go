@@ -11,13 +11,13 @@ import (
 var (
 	// 全局日志记录器实例
 	Logger zerolog.Logger
-	log   *logConfig
+	log    *logConfig
 )
 
 type logConfig struct {
-	Level  zerolog.Level `yaml:"level"`
-	Target string        `yaml:"target"`
-	TimeFormat string    `yaml:"timeFormat"`
+	Level      zerolog.Level `yaml:"level"`
+	Target     string        `yaml:"target"`
+	TimeFormat string        `yaml:"timeFormat"`
 }
 
 func init() {

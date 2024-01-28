@@ -1,3 +1,3 @@
 .vscode
-out/target/
-out/log/
+out/target/*
+out/log/*.log
