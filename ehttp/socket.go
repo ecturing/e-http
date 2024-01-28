@@ -3,19 +3,19 @@ package ehttp
 import (
 	"bufio"
 	"bytes"
-	"fmt"
 	"net"
+	"ews/logutil"
 )
 
 type Event struct {
-	Conn   *net.TCPConn
+	// Conn   *net.TCPConn
 	Reader *bufio.Reader
 	Writer *bytes.Buffer
 }
 
 // 定义socket绑定点，并将socket交给Linux epoll管理，增强并发率
 func InitSocket(address string) error {
-	fmt.Println("socket init")
+	logutil.Logger.Info().Msgf("Starting TCP server on %s", address)
 	tcpAddr, err := net.ResolveTCPAddr("tcp", address)
 	if err != nil {
 		return err
@@ -25,20 +25,20 @@ func InitSocket(address string) error {
 		return err
 	}
 	defer listener.Close()
-	
+
 	listenerHandler(listener)
 	return nil
 }
 
 func listenerHandler(listener *net.TCPListener) {
-	fmt.Println("TCP LISTENING")
+	logutil.Logger.Info().Msg("Tcp listener start")
 	for {
 		conn, err := listener.AcceptTCP()
 		if err != nil {
-			fmt.Printf("Error accepting connection: %s\n", err.Error())
+			logutil.Logger.Error().Err(err).Msg("Error accepting connection")
 			continue
 		}
-		fmt.Printf("%s TCP join the server\n",conn.RemoteAddr().String())
+		logutil.Logger.Info().Msgf("Accepted connection from %s", conn.RemoteAddr().String())
 		go connectionReadBuf(conn)
 		go connectWriteBuf(conn)
 	}
@@ -46,22 +46,31 @@ func listenerHandler(listener *net.TCPListener) {
 
 // 读取链接缓冲区准备读取的事件并发送到管道
 func connectionReadBuf(c *net.TCPConn) {
-		readevent := bufio.NewReader(c)
-		var event = &Event{
-			Conn: c, 
-			Reader: readevent, 
-			Writer: nil,
-		}
-		ReadQueen <- event
+	readevent := bufio.NewReader(c)
+	var event = &Event{
+		// Conn:   c,
+		Reader: readevent,
+		Writer: nil,
+	}
+	ReadQueen <- event
 }
 
 // 写入链接的缓冲区
 func connectWriteBuf(c *net.TCPConn) {
-	for s := range WriteQueen {
+	select {
+	case s := <-WriteQueen:
+		// do
 		w := bufio.NewWriter(c)
 		w.Write(s.Writer.Bytes())
 		w.Flush()
 		c.Close()
-		fmt.Printf("%s TCP leave the server\n",c.RemoteAddr().String())
+		logutil.Logger.Info().Msgf("%s TCP leave the server", c.RemoteAddr().String())
+	case s := <-ErrorSingal:
+		// do
+		w := bufio.NewWriter(c)
+		w.Write(s.Writer.Bytes())
+		w.Flush()
+		c.Close()
+		logutil.Logger.Info().Msgf("%s TCP leave the server", c.RemoteAddr().String())
 	}
 }

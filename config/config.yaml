@@ -1,0 +1,31 @@
+#日志等级
+# DebugLevel Level = iota
+# InfoLevel
+# WarnLevel
+# ErrorLevel
+# FatalLevel
+# PanicLevel
+# NoLevel
+# Disabled
+level: 1
+
+
+#日志输出路径
+target: "out/log/app.log"
+
+
+# 日志时间格式
+# TimeFormatUnix = ""
+
+# TimeFormatUnixMs defines a time format that makes time fields to be
+# serialized as Unix timestamp integers in milliseconds.
+# TimeFormatUnixMs = "UNIXMS"
+
+# TimeFormatUnixMicro defines a time format that makes time fields to be
+# serialized as Unix timestamp integers in microseconds.
+# TimeFormatUnixMicro = "UNIXMICRO"
+
+# TimeFormatUnixNano defines a time format that makes time fields to be
+# serialized as Unix timestamp integers in nanoseconds.
+# TimeFormatUnixNano = "UNIXNANO"
+timeFormat: ""

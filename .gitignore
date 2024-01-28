@@ -1,2 +1,3 @@
-ews
 .vscode
+out/target/*
+out/log/*.log
