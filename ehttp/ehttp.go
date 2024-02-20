@@ -59,10 +59,16 @@ func (w *E_Response) ResponseSerializer() *bytes.Buffer {
 	buf := bytes.NewBuffer([]byte(b.String()))
 	return buf
 }
-
+                           
+// 默认响应头
 func (w *E_Response) DefaultHeader() {
 	w.Headers["Content-Type"] = "text/plain"
 	w.Headers["Server"] = "EWS"
+}
+
+// 设置关闭连接请求头
+func (w *E_Response)SetConnClose()  {
+	w.Headers["Connection"] = "close"
 }
 
 // 请求体
