@@ -1,5 +1,5 @@
 // 创建一个名为logutil的包
-package logutil
+package log
 
 import (
 	"ews/config"

@@ -2,7 +2,7 @@ package ehttp
 
 import (
 	"ews/Eerror"
-	"ews/logutil"
+	"ews/log"
 )
 
 // 请求方法重定义
@@ -54,7 +54,7 @@ type treeNode struct {
 func (r *Router) Register(pattern string, f ServerHTTP, method RequestMethod) {
 	defer func() {
 		if err := recover(); err != nil {
-			logutil.Logger.Error().Err(err.(error)).Msg("Register error")
+			log.Logger.Error().Err(err.(error)).Msg("Register error")
 		}
 	}()
 
@@ -90,7 +90,7 @@ func (r *Router) Search(pattern string, method RequestMethod) (ServerHTTP, error
 
 	defer func() {
 		if err := recover(); err != nil {
-			logutil.Logger.Error().Err(err.(error)).Msg("Search error")
+			log.Logger.Error().Err(err.(error)).Msg("Search error")
 		}
 	}()
 
@@ -120,13 +120,13 @@ func (r *Router) Search(pattern string, method RequestMethod) (ServerHTTP, error
 		}
 
 	}
-	logutil.Logger.Error().Err(Eerror.NotFound).Msg("Search error")
+	log.Logger.Error().Err(Eerror.NotFound).Msg("Search error")
 	return nil, Eerror.NotFound
 }
 
 // 路由监听函数
 func (r *Router) RouterListen() {
-	logutil.Logger.Info().Msg("Starting Router Listening...")
+	log.Logger.Info().Msg("Starting Router Listening...")
 	for read := range ReadQueen {
 		ReadRequest(r, read.Reader)
 	}
