@@ -2,13 +2,12 @@ package Eerror
 
 // 错误码枚举，无符号短整型
 var (
-	// 生成Http错误码枚举
 	NotFound        = NetError{Code: 404, Msg: "Not Found"}
 	MethodNotAllow  = NetError{Code: 405, Msg: "Method Not Allow"}
 	OK              = NetError{Code: 200, Msg: "OK"}
 	UnSupportMethod = NetError{Code: 501, Msg: "UNSUPPORT METHOD"}
 	BadRequest      = NetError{Code: 400, Msg: "Bad Request"}
-
+	UnSupportProto  = NetError{Code: 505, Msg: "UNSUPPORT PROTO"}
 	SERVERERR = ServerError{Code: 500, Msg: "Server Error"}
 )
 
