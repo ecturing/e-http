@@ -4,15 +4,27 @@ import (
 	"ews/log"
 )
 
-// 请求与函数组合+套接字启动
-func Server(r *Router, pattern string, f ServerHTTP, m RequestMethod) {
-	r.Register(pattern, f, m)
-	log.Logger.Info().Msg("server start")
-	go r.RouterListen()
+type Serve struct {
+	addr   string
+	Router *Router
 }
 
-func Confirm(s string) {
-	err := InitSocket(s)
+type ServerHandle interface {
+	ServerHTTP(address string) error
+}
+
+// 请求与函数组合+套接字启动
+func ServerMux(r *Router, pattern string, f ServerHTTP, m RequestMethod) {
+	r.Register(pattern, f, m)
+	log.Logger.Info().Msg("server start")
+}
+
+func ListenAddr(addr string, r *Router) {
+	Server := &Serve{
+		addr:   addr,
+		Router: r,
+	}
+	err := Server.ServerHTTP(addr)
 	if err != nil {
 		log.Logger.Fatal().Err(err).Msgf("socket error %v", err)
 	}
