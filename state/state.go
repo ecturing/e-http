@@ -1,7 +1,6 @@
 package state
 
 import (
-	"ews/ehttp"
 	"net"
 )
 
@@ -44,8 +43,6 @@ func (c *ConnState) BlockStateToActiveState(){
 // 2. ActiveState -> CloseState
 func (c *ConnState) ActiveStateToCloseState(){
 	//to do
-	req:=&ehttp.E_Response{}
-	req.SetConnClose()
 	c.connstate = Close
 }
 
