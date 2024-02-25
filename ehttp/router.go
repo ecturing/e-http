@@ -123,11 +123,3 @@ func (r *Router) Search(pattern string, method RequestMethod) (ServerHTTP, error
 	log.Logger.Error().Err(Eerror.NotFound).Msg("Search error")
 	return nil, Eerror.NotFound
 }
-
-// 路由监听函数
-func (r *Router) RouterListen() {
-	log.Logger.Info().Msg("Starting Router Listening...")
-	for read := range ReadQueen {
-		ReadRequest(r, read.Reader)
-	}
-}
