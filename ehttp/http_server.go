@@ -4,7 +4,7 @@ import (
 	"ews/log"
 )
 
-type Serve struct {
+type ServerArg struct {
 	addr   string
 	Router *Router
 }
@@ -20,7 +20,7 @@ func ServerMux(r *Router, pattern string, f ServerHTTP, m RequestMethod) {
 }
 
 func ListenAddr(addr string, r *Router) {
-	Server := &Serve{
+	Server := &ServerArg{
 		addr:   addr,
 		Router: r,
 	}
