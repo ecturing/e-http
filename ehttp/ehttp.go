@@ -251,22 +251,22 @@ func ReadRequest(router *Router, reader *bufio.Reader) ConnClose {
 	switch req.Method {
 	case GET:
 		// do
-		hander, err := router.Search(req.URL.Path, req.Method)
+		handler, err := router.Search(req.URL.Path, req.Method)
 		if err != nil {
 			ErrSingal(err)
 			return ConnClose(true)
 		}
-		log.Logger.Info().Msg("进入处理环节")
-		hander(req, rep)
+		log.Logger.Info().Msg("pre handle get request")
+		handler(req, rep)
 		rep.DefaultHeader()
 	case POST:
 		// do
-		hander, err := router.Search(req.URL.Path, req.Method)
+		handler, err := router.Search(req.URL.Path, req.Method)
 		if err != nil {
 			ErrSingal(err)
 			return ConnClose(true)
 		}
-		hander(req, rep)
+		handler(req, rep)
 		rep.DefaultHeader()
 	case PUT:
 		// do
