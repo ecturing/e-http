@@ -63,6 +63,9 @@ func (w *E_Response) ResponseSerializer() *bytes.Buffer {
 func (w *E_Response) DefaultHeader() {
 	w.Headers["Content-Type"] = "text/plain"
 	w.Headers["Server"] = "EWS"
+
+	buf := bytes.NewBufferString(w.DataFrom)
+	w.Headers["Content-Length"] = strconv.Itoa(buf.Len())
 }
 
 // 请求体
@@ -239,7 +242,7 @@ func ReadRequest(router *Router, reader *bufio.Reader) ConnClose {
 		return ConnClose(true)
 	}
 	var rep = &E_Response{
-		protocal: "HTTP/1.0",
+		protocal: "HTTP/1.1",
 		Status:   200,
 		OK:       "OK",
 		Headers:  make(map[string]string),
@@ -254,8 +257,8 @@ func ReadRequest(router *Router, reader *bufio.Reader) ConnClose {
 			return ConnClose(true)
 		}
 		log.Logger.Info().Msg("进入处理环节")
-		rep.DefaultHeader()
 		hander(req, rep)
+		rep.DefaultHeader()
 	case POST:
 		// do
 		hander, err := router.Search(req.URL.Path, req.Method)
@@ -263,8 +266,8 @@ func ReadRequest(router *Router, reader *bufio.Reader) ConnClose {
 			ErrSingal(err)
 			return ConnClose(true)
 		}
-		rep.DefaultHeader()
 		hander(req, rep)
+		rep.DefaultHeader()
 	case PUT:
 		// do
 
