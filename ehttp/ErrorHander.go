@@ -2,7 +2,7 @@ package ehttp
 
 import (
 	"ews/Eerror"
-	"ews/logutil"
+	"ews/log"
 )
 
 var (
@@ -13,10 +13,10 @@ var (
 func errHandler(e error) int {
 	switch err := e.(type) {
 	case Eerror.NetError:
-		logutil.Logger.Error().Err(err).Msg(err.Msg)
+		log.Logger.Error().Err(err).Msg(err.Msg)
 		return err.Code
 	case Eerror.ServerError:
-		logutil.Logger.Error().Err(err).Msg(err.Msg)
+		log.Logger.Error().Err(err).Msg(err.Msg)
 		return err.Code
 	case nil:
 		return Eerror.OK.Code
@@ -28,7 +28,7 @@ func errHandler(e error) int {
 
 func ErrSingal(err error) {
 	er := &E_Response{
-		protocal: "HTTP/1.0",
+		protocal: "HTTP/1.1",
 		Status:   errHandler(err),
 		OK:       "OK",
 		Headers:  make(map[string]string),

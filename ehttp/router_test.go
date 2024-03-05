@@ -73,23 +73,3 @@ func TestRouter_Search(t *testing.T) {
 		})
 	}
 }
-
-func TestRouter_RouterListen(t *testing.T) {
-	type fields struct {
-		root *treeNode
-	}
-	tests := []struct {
-		name   string
-		fields fields
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := &Router{
-				root: tt.fields.root,
-			}
-			r.RouterListen()
-		})
-	}
-}

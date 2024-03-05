@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"errors"
 	"ews/Eerror"
-	"ews/logutil"
+	"ews/log"
 	"io"
 	"strconv"
 	"strings"
@@ -20,8 +20,8 @@ const (
 type ServerHTTP func(r *E_Request, rp *E_Response)
 
 var (
-	ReadQueen = make(chan *Event, 10)
-	// body_buffer = make([]byte, 1024)
+	ReadQueen  = make(chan *Event, 10)
+	CloseQueen = make(chan struct{}, 10)
 	WriteQueen = make(chan *Event, 10)
 )
 
@@ -63,6 +63,9 @@ func (w *E_Response) ResponseSerializer() *bytes.Buffer {
 func (w *E_Response) DefaultHeader() {
 	w.Headers["Content-Type"] = "text/plain"
 	w.Headers["Server"] = "EWS"
+
+	buf := bytes.NewBufferString(w.DataFrom)
+	w.Headers["Content-Length"] = strconv.Itoa(buf.Len())
 }
 
 // 请求体
@@ -80,44 +83,39 @@ type E_URL struct {
 	Query string
 }
 
-// 请求处理
-type RequestHandler interface {
-	//获取请求头
-	GetHeader()
-	//获取请求体
-	GetBody()
-}
-
 // 请求体构造
-func NewRequest(b *bufio.Reader) *E_Request {
-	line, header := GetLineHeader(b)
+func NewRequest(b *bufio.Reader) (req *E_Request) {
+	line, header, breakerr := GetLineHeader(b)
+	if breakerr != nil {
+		log.Logger.Error().Err(breakerr).Msg("请求行与请求头解析错误")
+		return
+	}
 	Header := ReadHeader(header)
-	logutil.Logger.Info().Msg("请求头:" + header)
-	logutil.Logger.Info().Msg("请求行:" + line)
+	log.Logger.Info().Msg("request header:" + header)
+	log.Logger.Info().Msg("request line:" + line)
 	method, URL, proto, e := ReadRequestLine(line)
 	if e != nil {
-		logutil.Logger.Error().Err(e).Msg("请求行解析错误")
+		log.Logger.Error().Err(e).Msg("request parse failed")
 		return nil
 	}
 	routerPath, values, err := ReadPathValues(URL)
 	if err != nil {
-		logutil.Logger.Error().Err(err).Msg("URL解析错误")
+		log.Logger.Error().Err(err).Msg("URL parse failed")
 	}
 	var body io.ReadCloser
 	if values == "" {
-		logutil.Logger.Info().Msg("没有查询参数")
+		log.Logger.Info().Msg("don`t have query args")
 		value, ok := Header["Content-Length"]
 		if ok {
 			content_length, err := strconv.Atoi(value)
 			if err != nil {
-				logutil.Logger.Error().Err(err).Msg("Content-Length参数非法")
+				log.Logger.Error().Err(err).Msg("Content-Length args invalid")
 			}
 			body = ReadBody(b, content_length)
 		} else {
 			ErrSingal(Eerror.BadRequest)
 		}
-
-		logutil.Logger.Info().Msg("请求体:查询")
+		log.Logger.Info().Msg("请求体:查询")
 	}
 	return &E_Request{
 		Method: RTR(method),
@@ -132,18 +130,18 @@ func NewRequest(b *bufio.Reader) *E_Request {
 }
 
 // 分离请求行与请求头
-func GetLineHeader(b *bufio.Reader) (string, string) {
+func GetLineHeader(b *bufio.Reader) (string, string, error) {
 	rline, e := b.ReadString('\n')
-	rline = strings.TrimSuffix(rline, "\r\n")
 	if e != nil {
-		return "", ""
+		return "", "", e
 	}
+	rline = strings.TrimSuffix(rline, "\r\n")
 	var Headerbuild strings.Builder
 	for {
 		line, _, err := b.ReadLine()
 		if err != nil && err != io.EOF {
-			logutil.Logger.Error().Err(err).Msg("读取HTTP请求体错误")
-			return "", ""
+			log.Logger.Error().Err(err).Msg("read header error")
+			return "", "", err
 		}
 
 		// 检查是否读取到了两个CRLF（\r\n），表示HTTP头部已经读取完毕，接下来的内容是消息主体
@@ -154,15 +152,15 @@ func GetLineHeader(b *bufio.Reader) (string, string) {
 		}
 
 	}
-	return rline, Headerbuild.String()
+	return rline, Headerbuild.String(), nil
 }
 
 // 读取request流中两次换行符之间的内容，返回一个*bufio.Reader
-func ReadBody(reader *bufio.Reader, length int) io.ReadCloser {
+func ReadBody(reader *bufio.Reader, length int) (body io.ReadCloser) {
 	var body_buffer = make([]byte, length)
 	_, err := reader.Read(body_buffer)
 	if err != nil {
-		logutil.Logger.Error().Err(err).Msg("读取HTTP请求体错误")
+		log.Logger.Error().Err(err).Msg("read body error")
 	}
 	return io.NopCloser(bytes.NewReader(body_buffer))
 }
@@ -173,7 +171,7 @@ func ReadRequestLine(s string) (method, URL, proto string, e error) {
 
 	defer func() {
 		if err := recover(); err != nil {
-			logutil.Logger.Error().Msg("行解析错误")
+			log.Logger.Error().Msg("ReadRequestLine error")
 		}
 	}()
 
@@ -187,12 +185,12 @@ func ReadRequestLine(s string) (method, URL, proto string, e error) {
 			url = u
 			protocol = p
 		} else {
-			err = errors.New("协议类型丢失")
-			logutil.Logger.Error().Msg("协议类型丢失")
+			err = errors.New("protocol type lost")
+			log.Logger.Error().Msg("protocol type lost")
 		}
 	} else {
 		err = errors.New("请求方法或丢失")
-		logutil.Logger.Error().Msg("请求方法或丢失")
+		log.Logger.Error().Msg("请求方法或丢失")
 	}
 	return emethod, url, protocol, err
 }
@@ -230,18 +228,21 @@ func ReadHeader(b string) map[string]string {
 }
 
 // Socket流读取Request
-func ReadRequest(router *Router, readevent *bufio.Reader) {
+func ReadRequest(router *Router, reader *bufio.Reader) ConnClose {
 
 	defer func() {
 		if err := recover(); err != nil {
 			ErrSingal(err.(error))
-			logutil.Logger.Error().Err(err.(error)).Msg("ReadRequest error")
+			log.Logger.Error().Err(err.(error)).Msg("ReadRequest error")
 		}
 	}()
 
-	req := NewRequest(readevent)
+	req := NewRequest(reader)
+	if req == nil {
+		return ConnClose(true)
+	}
 	var rep = &E_Response{
-		protocal: "HTTP/1.0",
+		protocal: "HTTP/1.1",
 		Status:   200,
 		OK:       "OK",
 		Headers:  make(map[string]string),
@@ -250,23 +251,23 @@ func ReadRequest(router *Router, readevent *bufio.Reader) {
 	switch req.Method {
 	case GET:
 		// do
-		hander, err := router.Search(req.URL.Path, req.Method)
+		handler, err := router.Search(req.URL.Path, req.Method)
 		if err != nil {
 			ErrSingal(err)
-			return
+			return ConnClose(true)
 		}
-		logutil.Logger.Info().Msg("进入处理环节")
+		log.Logger.Info().Msg("pre handle get request")
+		handler(req, rep)
 		rep.DefaultHeader()
-		hander(req, rep)
 	case POST:
 		// do
-		hander, err := router.Search(req.URL.Path, req.Method)
+		handler, err := router.Search(req.URL.Path, req.Method)
 		if err != nil {
 			ErrSingal(err)
-			return
+			return ConnClose(true)
 		}
+		handler(req, rep)
 		rep.DefaultHeader()
-		hander(req, rep)
 	case PUT:
 		// do
 
@@ -276,12 +277,21 @@ func ReadRequest(router *Router, readevent *bufio.Reader) {
 	default:
 		panic(Eerror.UnSupportMethod)
 	}
-	var event = &Event{
-		// Conn:   nil,
-		Reader: nil,
-		Writer: rep.ResponseSerializer(),
+	proto := req.Proto
+	switch proto {
+	case "HTTP/1.0":
+		// do
+		rep.Send(true)
+		return ConnClose(true)
+	case "HTTP/1.1":
+		// do
+		rep.Send(false)
+		return ConnClose(false)
+	default:
+		log.Logger.Debug().Msg("不支持的协议类型")
+		ErrSingal(Eerror.UnSupportProto)
+		return ConnClose(true)
 	}
-	WriteQueen <- event
 }
 
 // 传统request method转自有request method
@@ -297,4 +307,19 @@ func RTR(method string) RequestMethod {
 		return 4
 	}
 	return -1
+}
+
+func send(rep *E_Response) {
+	var event = &Event{
+		Reader: nil,
+		Writer: rep.ResponseSerializer(),
+	}
+	WriteQueen <- event
+}
+
+func (rep *E_Response) Send(close bool) {
+	if close {
+		rep.Headers["Connection"] = "close"
+	}
+	send(rep)
 }

@@ -7,7 +7,7 @@
 # PanicLevel
 # NoLevel
 # Disabled
-level: 1
+level: 0
 
 
 #日志输出路径

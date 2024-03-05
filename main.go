@@ -7,8 +7,8 @@ import (
 
 func main() {
 	r := ehttp.NewRouter()
-	ehttp.Server(r, "/server", server, ehttp.POST)
-	ehttp.Confirm(":8080")
+	ehttp.ServerMux(r, "/server", server, ehttp.POST)
+	ehttp.ListenAddr(":8080",r)
 }
 
 func server(rq *ehttp.E_Request, rp *ehttp.E_Response) {

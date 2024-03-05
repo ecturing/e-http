@@ -2,7 +2,7 @@ package ehttp
 
 import (
 	"ews/Eerror"
-	"ews/logutil"
+	"ews/log"
 )
 
 // 请求方法重定义
@@ -28,7 +28,7 @@ func NewRouter() *Router {
 		pattern:   ' ',
 		EndNode:   false,
 		childNode: make(map[rune]*treeNode),
-		hander:    nil,
+		handler:    nil,
 		method:    NULL,
 	}}
 }
@@ -46,7 +46,7 @@ type treeNode struct {
 	pattern   rune               //节点值
 	EndNode   bool               //终止节点
 	childNode map[rune]*treeNode //孩子节点
-	hander    ServerHTTP         //函数绑定
+	handler    ServerHTTP         //函数绑定
 	method    RequestMethod      //请求方法
 }
 
@@ -54,7 +54,7 @@ type treeNode struct {
 func (r *Router) Register(pattern string, f ServerHTTP, method RequestMethod) {
 	defer func() {
 		if err := recover(); err != nil {
-			logutil.Logger.Error().Err(err.(error)).Msg("Register error")
+			log.Logger.Error().Err(err.(error)).Msg("Register error")
 		}
 	}()
 
@@ -63,7 +63,7 @@ func (r *Router) Register(pattern string, f ServerHTTP, method RequestMethod) {
 	} else if pattern == "" {
 		panic("pattern is empty")
 	} else if f == nil {
-		panic("hander is nil")
+		panic("handler is nil")
 	} else {
 		//遍历pattern，使用pattern的每个字符来使用前缀树构建路由树
 		current := r.root
@@ -73,14 +73,14 @@ func (r *Router) Register(pattern string, f ServerHTTP, method RequestMethod) {
 					pattern:   v,
 					EndNode:   false,
 					childNode: make(map[rune]*treeNode),
-					hander:    nil,
+					handler:    nil,
 					method:    NULL,
 				}
 			}
 			current = current.childNode[v]
 		}
 		current.EndNode = true
-		current.hander = f
+		current.handler = f
 		current.method = method
 	}
 }
@@ -90,7 +90,7 @@ func (r *Router) Search(pattern string, method RequestMethod) (ServerHTTP, error
 
 	defer func() {
 		if err := recover(); err != nil {
-			logutil.Logger.Error().Err(err.(error)).Msg("Search error")
+			log.Logger.Error().Err(err.(error)).Msg("Search error")
 		}
 	}()
 
@@ -110,7 +110,7 @@ func (r *Router) Search(pattern string, method RequestMethod) (ServerHTTP, error
 				cur = cur.childNode[v]
 			}
 			if cur.EndNode && cur.method == method {
-				return cur.hander, nil
+				return cur.handler, nil
 			} else if !cur.EndNode {
 				return nil, Eerror.NotFound
 
@@ -120,14 +120,6 @@ func (r *Router) Search(pattern string, method RequestMethod) (ServerHTTP, error
 		}
 
 	}
-	logutil.Logger.Error().Err(Eerror.NotFound).Msg("Search error")
+	log.Logger.Error().Err(Eerror.NotFound).Msg("Search error")
 	return nil, Eerror.NotFound
-}
-
-// 路由监听函数
-func (r *Router) RouterListen() {
-	logutil.Logger.Info().Msg("Starting Router Listening...")
-	for read := range ReadQueen {
-		ReadRequest(r, read.Reader)
-	}
 }

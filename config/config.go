@@ -12,7 +12,7 @@ var (
 
 func init() {
 	// 初始化yaml配置文件器
-	file, err := os.Open("config/config.yaml")
+	file, err := os.Open("config/example_config.yaml")
 	if err != nil {
 		panic(err)
 	}
