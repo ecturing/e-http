@@ -178,7 +178,10 @@ func TestGetLineHeader(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := GetLineHeader(tt.args.b)
+			got, got1 ,err:= GetLineHeader(tt.args.b)
+			if err != nil{
+				t.Errorf("GetLineHeader() error = %v", err)
+			}
 			if got != tt.want {
 				t.Errorf("GetLineHeader() got = %v, want %v", got, tt.want)
 			}
