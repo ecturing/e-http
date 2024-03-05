@@ -28,7 +28,7 @@ func errHandler(e error) int {
 
 func ErrSingal(err error) {
 	er := &E_Response{
-		protocal: "HTTP/1.0",
+		protocal: "HTTP/1.1",
 		Status:   errHandler(err),
 		OK:       "OK",
 		Headers:  make(map[string]string),
